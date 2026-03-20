@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIR — HR Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f5f3;
+  --bg-tertiary: #efefed;
+  --text-primary: #1a1a19;
+  --text-secondary: #6b6b68;
+  --text-tertiary: #9b9b97;
+  --border: rgba(0,0,0,0.1);
+  --border-md: rgba(0,0,0,0.15);
+  --radius-md: 8px;
+  --radius-lg: 12px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #262624;
+    --bg-tertiary: #2e2e2b;
+    --text-primary: #f0f0ee;
+    --text-secondary: #a0a09c;
+    --text-tertiary: #6b6b68;
+    --border: rgba(255,255,255,0.1);
+    --border-md: rgba(255,255,255,0.15);
+  }
+}
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg-tertiary); color: var(--text-primary); min-height: 100vh; padding: 2rem; }
+.page { max-width: 1200px; margin: 0 auto; }
+.top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.75rem; }
+.top-bar-left { display: flex; align-items: center; gap: 10px; }
+.logo-badge { background: #1a2744; color: #fff; font-size: 13px; font-weight: 500; padding: 5px 12px; border-radius: var(--radius-md); letter-spacing: 0.04em; }
+.dept-tag { font-size: 13px; color: var(--text-secondary); border: 0.5px solid var(--border-md); padding: 4px 10px; border-radius: var(--radius-md); background: var(--bg-primary); }
+.date-tag { font-size: 12px; color: var(--text-tertiary); }
+.section-label { font-size: 10px; font-weight: 500; color: var(--text-tertiary); letter-spacing: 0.09em; text-transform: uppercase; margin-bottom: 8px; }
+.section-divider { display: flex; align-items: center; gap: 12px; margin: 2rem 0 1rem; }
+.section-divider-line { flex: 1; height: 0.5px; background: var(--border); }
+.section-divider-label { font-size: 11px; font-weight: 500; color: var(--text-secondary); letter-spacing: 0.07em; text-transform: uppercase; white-space: nowrap; }
+.metrics-grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; margin-bottom: 1.25rem; }
+.metrics-grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; margin-bottom: 1.25rem; }
+.metric-card { background: var(--bg-secondary); border-radius: var(--radius-md); padding: 12px 14px; }
+.metric-label { font-size: 11px; color: var(--text-secondary); margin-bottom: 5px; }
+.metric-value { font-size: 24px; font-weight: 500; color: var(--text-primary); line-height: 1; }
+.metric-sub { font-size: 11px; margin-top: 4px; }
+.up { color: #3B6D11; } .down { color: #A32D2D; } .neutral { color: var(--text-tertiary); }
+.card { background: var(--bg-primary); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; }
+.card-title { font-size: 13px; font-weight: 500; color: var(--text-primary); margin-bottom: 0.85rem; }
+.grid-2 { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; margin-bottom: 1.25rem; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; margin-bottom: 1.25rem; }
+.attendance-strip { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 10px; margin-bottom: 1.25rem; }
+.att-card { background: var(--bg-primary); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 12px 14px; }
+.att-icon { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+.att-label { font-size: 11px; color: var(--text-secondary); display: flex; align-items: center; margin-bottom: 6px; }
+.att-num { font-size: 22px; font-weight: 500; color: var(--text-primary); display: block; }
+.att-deltas { display: flex; gap: 10px; margin-top: 5px; }
+.delta { font-size: 10px; color: var(--text-tertiary); }
+.delta-val { font-weight: 500; }
+.delta-alert { color: #A32D2D; font-weight: 500; }
+.highlight-warn { border-color: #EF9F27 !important; }
+.highlight-crit { border-color: #E24B4A !important; }
+.dept-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.dept-table th { font-size: 10px; font-weight: 500; color: var(--text-tertiary); text-align: left; padding: 6px 10px; border-bottom: 0.5px solid var(--border); white-space: nowrap; letter-spacing: 0.05em; text-transform: uppercase; background: var(--bg-primary); }
+.dept-table td { padding: 8px 10px; border-bottom: 0.5px solid var(--border); color: var(--text-primary); vertical-align: middle; white-space: nowrap; }
+.dept-table tr:last-child td { border-bottom: none; }
+.dept-table tr:hover td { background: var(--bg-secondary); }
+.dept-name-cell { font-weight: 500; }
+.status-pill { font-size: 10px; padding: 3px 9px; border-radius: 20px; font-weight: 500; display: inline-block; }
+.ok { background: #EAF3DE; color: #3B6D11; }
+.attention { background: #FAEEDA; color: #854F0B; }
+.critical { background: #FCEBEB; color: #A32D2D; }
+@media (prefers-color-scheme: dark) {
+  .ok { background: #27500A; color: #C0DD97; }
+  .attention { background: #633806; color: #FAC775; }
+  .critical { background: #791F1F; color: #F7C1C1; }
+}
+.risk-team-card { border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 10px 12px; background: var(--bg-primary); }
+.avail-bar-wrap { height: 5px; border-radius: 3px; background: var(--bg-secondary); overflow: hidden; margin-top: 6px; }
+.avail-bar { height: 100%; border-radius: 3px; }
+.alert-row { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: var(--radius-md); margin-bottom: 7px; font-size: 12px; }
+.alert-icon { width: 6px; height: 6px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+.alert-title { font-weight: 500; color: var(--text-primary); }
+.alert-sub { color: var(--text-secondary); font-size: 11px; margin-top: 2px; }
+.alert-warn { background: rgba(239,159,39,0.08); border: 0.5px solid rgba(239,159,39,0.3); }
+.alert-crit { background: rgba(226,75,74,0.07); border: 0.5px solid rgba(226,75,74,0.3); }
+.alert-info { background: rgba(56,138,221,0.07); border: 0.5px solid rgba(56,138,221,0.25); }
+.leave-heatmap { display: grid; grid-template-columns: 72px repeat(8,1fr); gap: 2px; font-size: 10px; }
+.lh-header { text-align: center; color: var(--text-tertiary); padding: 2px 0; }
+.lh-dept { color: var(--text-secondary); padding: 3px 4px; display: flex; align-items: center; }
+.lh-cell { border-radius: 2px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 500; }
+.legend-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 8px; font-size: 11px; color: var(--text-secondary); }
+.legend-dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 4px; }
+.pie-legend { display: flex; flex-direction: column; gap: 5px; margin-top: 10px; }
+.pie-legend-item { display: flex; align-items: center; justify-content: space-between; font-size: 11px; }
+.pie-legend-left { display: flex; align-items: center; gap: 6px; }
+.pie-legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.pie-legend-label { color: var(--text-secondary); }
+.pie-legend-val { font-weight: 500; color: var(--text-primary); }
+.dept-pie-title { font-size: 12px; font-weight: 500; color: var(--text-primary); margin-bottom: 2px; }
+.dept-pie-total { font-size: 10px; color: var(--text-tertiary); margin-bottom: 8px; }
+.toggle-group { display: flex; border: 0.5px solid var(--border-md); border-radius: var(--radius-md); overflow: hidden; }
+.toggle-btn { font-size: 11px; font-weight: 500; padding: 4px 14px; cursor: pointer; border: none; background: transparent; color: var(--text-secondary); transition: background 0.15s, color 0.15s; }
+.toggle-btn.active { background: var(--bg-secondary); color: var(--text-primary); }
+.demo-split-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.demo-split-label { font-size: 12px; color: var(--text-secondary); min-width: 80px; }
+.demo-split-bar { flex: 1; display: flex; height: 22px; border-radius: var(--radius-md); overflow: hidden; }
+.demo-split-seg { display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; }
+.demo-split-counts { font-size: 11px; color: var(--text-secondary); min-width: 90px; text-align: right; }
+.pill { font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 500; white-space: nowrap; display: inline-block; }
+.pill-blue { background: #E6F1FB; color: #185FA5; }
+.pill-amber { background: #FAEEDA; color: #854F0B; }
+.pill-green { background: #EAF3DE; color: #3B6D11; }
+.pill-gray { background: #F1EFE8; color: #5F5E5A; }
+@media (prefers-color-scheme: dark) {
+  .pill-blue { background: #0C447C; color: #B5D4F4; }
+  .pill-amber { background: #633806; color: #FAC775; }
+  .pill-green { background: #27500A; color: #C0DD97; }
+  .pill-gray { background: #444441; color: #D3D1C7; }
+}
+@media (max-width: 768px) {
+  body { padding: 1rem; }
+  .attendance-strip { grid-template-columns: repeat(2, 1fr); }
+  .grid-2, .grid-3, .metrics-grid-3, .metrics-grid-4 { grid-template-columns: 1fr; }
+  .leave-heatmap { grid-template-columns: 60px repeat(4,1fr); }
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <span class="logo-badge">AIR</span>
+      <span class="dept-tag">Human Resources</span>
+    </div>
+    <span class="date-tag">Thursday, March 19, 2026</span>
+  </div>
+
+  <!-- HR SECTION -->
+  <div class="section-divider"><div class="section-divider-line"></div><span class="section-divider-label">HR</span><div class="section-divider-line"></div></div>
+
+  <div class="metrics-grid-3">
+    <div class="metric-card"><div class="metric-label">Total headcount</div><div class="metric-value">247</div><div class="metric-sub up">+8 vs last month</div></div>
+    <div class="metric-card"><div class="metric-label">Open positions</div><div class="metric-value">19</div><div class="metric-sub neutral">across 5 departments</div></div>
+    <div class="metric-card"><div class="metric-label">Headcount change</div><div class="metric-value">+8</div><div class="metric-sub up">this month</div></div>
+  </div>
+
+  <div class="section-label">Attendance today</div>
+  <div class="attendance-strip">
+    <div class="att-card"><div class="att-label"><span class="att-icon" style="background:#378ADD;"></span>In office</div><span class="att-num">118</span><div class="att-deltas"><span class="delta">vs yesterday: <span class="delta-val up">+6</span></span><span class="delta">4w avg: <span class="delta-val neutral">114</span></span></div></div>
+    <div class="att-card"><div class="att-label"><span class="att-icon" style="background:#5DCAA5;"></span>Remote</div><span class="att-num">74</span><div class="att-deltas"><span class="delta">vs yesterday: <span class="delta-val neutral">-2</span></span><span class="delta">4w avg: <span class="delta-val neutral">71</span></span></div></div>
+    <div class="att-card"><div class="att-label"><span class="att-icon" style="background:#EF9F27;"></span>Leave</div><span class="att-num">22</span><div class="att-deltas"><span class="delta">vs yesterday: <span class="delta-val neutral">0</span></span><span class="delta">4w avg: <span class="delta-val neutral">20</span></span></div></div>
+    <div class="att-card highlight-warn"><div class="att-label"><span class="att-icon" style="background:#E24B4A;"></span>Sick</div><span class="att-num">19</span><div class="att-deltas"><span class="delta">vs yesterday: <span class="delta-alert">+5 !</span></span><span class="delta">4w avg: <span class="delta-val neutral">11</span></span></div></div>
+    <div class="att-card highlight-crit"><div class="att-label"><span class="att-icon" style="background:#7F77DD;"></span>Reserves</div><span class="att-num">14</span><div class="att-deltas"><span class="delta">vs yesterday: <span class="delta-alert">+3 !</span></span><span class="delta">4w avg: <span class="delta-val neutral">8</span></span></div></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Attendance breakdown — 247 employees</div>
+      <div style="position:relative;width:100%;height:190px;"><canvas id="mainPie"></canvas></div>
+      <div class="pie-legend" id="mainLegend"></div>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div style="padding:1rem 1.25rem 0.5rem;"><span class="card-title">Department breakdown &amp; risk</span></div>
+      <table class="dept-table" id="deptTableWrap"></table>
+    </div>
+  </div>
+
+  <div class="grid-3">
+    <div class="card">
+      <div class="dept-pie-title">CEO Office</div>
+      <div class="dept-pie-total" id="ceoTotal"></div>
+      <div style="position:relative;width:100%;height:150px;"><canvas id="ceoPie"></canvas></div>
+      <div class="pie-legend" id="ceoLegend"></div>
+    </div>
+    <div class="card">
+      <div class="dept-pie-title">Procurement</div>
+      <div class="dept-pie-total" id="procTotal"></div>
+      <div style="position:relative;width:100%;height:150px;"><canvas id="procPie"></canvas></div>
+      <div class="pie-legend" id="procLegend"></div>
+    </div>
+    <div class="card">
+      <div class="dept-pie-title">Production</div>
+      <div class="dept-pie-total" id="prodTotal"></div>
+      <div style="position:relative;width:100%;height:150px;"><canvas id="prodPie"></canvas></div>
+      <div class="pie-legend" id="prodLegend"></div>
+    </div>
+  </div>
+
+  <div class="section-label">Teams at risk — availability below 80%</div>
+  <div class="grid-3" id="riskTeamGrid" style="margin-bottom:1.25rem;"></div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Concurrent leave alerts</div>
+      <div id="alertsContainer"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Leave overlap — next 4 weeks</div>
+      <div style="font-size:10px;color:var(--text-tertiary);margin-bottom:8px;">Headcount on leave per week</div>
+      <div class="leave-heatmap" id="leaveHeatmap"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:1.25rem;margin-bottom:1.25rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.85rem;">
+      <span class="card-title">Attendance trend</span>
+      <div class="toggle-group">
+        <button class="toggle-btn active" id="btnWeekly" onclick="setView('weekly')">Weekly</button>
+        <button class="toggle-btn" id="btnMonthly" onclick="setView('monthly')">Monthly</button>
+      </div>
+    </div>
+    <div class="legend-row">
+      <span><span class="legend-dot" style="background:#378ADD;"></span>In office</span>
+      <span><span class="legend-dot" style="background:#5DCAA5;"></span>Remote</span>
+      <span><span class="legend-dot" style="background:#E24B4A;"></span>Sick</span>
+      <span><span class="legend-dot" style="background:#7F77DD;"></span>Reserve</span>
+    </div>
+    <div style="position:relative;width:100%;height:200px;"><canvas id="trendChart"></canvas></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Gender — company wide</div>
+      <div id="genderCompany"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Location — company wide</div>
+      <div id="locationCompany"></div>
+    </div>
+  </div>
+
+  <!-- HIRING SECTION -->
+  <div class="section-divider" style="margin-top:2.5rem;"><div class="section-divider-line"></div><span class="section-divider-label">Hiring</span><div class="section-divider-line"></div></div>
+
+  <div class="metrics-grid-3">
+    <div class="metric-card"><div class="metric-label">Open REQs</div><div class="metric-value">19</div><div class="metric-sub neutral">across 5 departments</div></div>
+    <div class="metric-card"><div class="metric-label">Attrition rate</div><div class="metric-value">3.2%</div><div class="metric-sub down">+0.4% vs last quarter</div></div>
+    <div class="metric-card"><div class="metric-label">Cost per hire</div><div class="metric-value">$4,200</div><div class="metric-sub neutral">+$150 vs last quarter</div></div>
+  </div>
+
+  <div class="card" style="margin-bottom:1.25rem;">
+    <div class="card-title">Open REQs by department</div>
+    <div style="position:relative;width:100%;height:200px;"><canvas id="reqChart"></canvas></div>
+    <div class="legend-row" style="margin-top:10px;">
+      <span><span class="legend-dot" style="background:#378ADD;"></span>Open REQs</span>
+      <span><span class="legend-dot" style="background:#B5D4F4;"></span>In progress</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Recruiting pipeline</div>
+    <div style="display:flex;flex-direction:column;gap:6px;" id="pipelineList"></div>
+  </div>
+
+</div>
+
+<script>
+const isDark = matchMedia('(prefers-color-scheme: dark)').matches;
+const gc = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)';
+const tc = '#888780';
+
+const depts = [
+  { name:'Production',  total:84, wk:+3, mo:+6, office:38, remote:26, leave:8, sick:7,  reserve:5 },
+  { name:'Operations',  total:54, wk:0,  mo:+2, office:26, remote:17, leave:4, sick:5,  reserve:2 },
+  { name:'Integration', total:44, wk:+2, mo:+3, office:20, remote:15, leave:4, sick:4,  reserve:1 },
+  { name:'CEO Office',  total:20, wk:0,  mo:+1, office:9,  remote:5,  leave:2, sick:1,  reserve:3 },
+  { name:'Procurement', total:20, wk:-1, mo:0,  office:10, remote:4,  leave:2, sick:2,  reserve:2 },
+];
+
+function riskScore(d) {
+  const u=(d.sick+d.reserve+d.leave)/d.total, r=d.reserve/d.total, s=d.sick/d.total, l=d.leave/d.total;
+  return Math.round((u*0.4+r*0.25+s*0.2+l*0.1+(d.wk<0?0.15:0))*100);
+}
+function statusLabel(s) {
+  if (s>=22) return ['Critical','critical'];
+  if (s>=12) return ['Attention','attention'];
+  return ['OK','ok'];
+}
+function fmtChg(v) {
+  if (v===0) return '<span style="color:var(--text-tertiary)">—</span>';
+  return `<span class="${v>0?'up':'down'}">${v>0?'+':''}${v}</span>`;
+}
+function alertMark(f, d) {
+  const thr={sick:0.08,reserve:0.06};
+  return thr[f]&&d[f]/d.total>thr[f]?' <span style="color:#E24B4A;font-weight:500;">!</span>':'';
+}
+
+const dtw = document.getElementById('deptTableWrap');
+dtw.innerHTML = '<thead><tr><th>Department</th><th>Total</th><th>Wk</th><th>Mo</th><th style="background:rgba(56,138,221,0.05)">Office</th><th style="background:rgba(93,202,165,0.05)">Remote</th><th style="background:rgba(239,159,39,0.05)">Leave</th><th style="background:rgba(226,75,74,0.05)">Sick</th><th style="background:rgba(127,119,221,0.05)">Reserve</th><th>Unavail%</th><th>Risk</th><th>Status</th></tr></thead><tbody id="deptRows"></tbody>';
+const deptRows = document.getElementById('deptRows');
+depts.forEach(d => {
+  const score=riskScore(d), [label,cls]=statusLabel(score);
+  const unavail=Math.round((d.sick+d.reserve+d.leave)/d.total*100);
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td class="dept-name-cell">${d.name}</td><td><strong>${d.total}</strong></td><td>${fmtChg(d.wk)}</td><td>${fmtChg(d.mo)}</td><td style="background:rgba(56,138,221,0.04)">${d.office} <span style="color:var(--text-tertiary);font-size:10px">${Math.round(d.office/d.total*100)}%</span></td><td style="background:rgba(93,202,165,0.04)">${d.remote} <span style="color:var(--text-tertiary);font-size:10px">${Math.round(d.remote/d.total*100)}%</span></td><td style="background:rgba(239,159,39,0.04)">${d.leave}${alertMark('leave',d)} <span style="color:var(--text-tertiary);font-size:10px">${Math.round(d.leave/d.total*100)}%</span></td><td style="background:rgba(226,75,74,0.04)">${d.sick}${alertMark('sick',d)} <span style="color:var(--text-tertiary);font-size:10px">${Math.round(d.sick/d.total*100)}%</span></td><td style="background:rgba(127,119,221,0.04)">${d.reserve}${alertMark('reserve',d)} <span style="color:var(--text-tertiary);font-size:10px">${Math.round(d.reserve/d.total*100)}%</span></td><td><strong>${unavail}%</strong></td><td style="font-size:11px;color:var(--text-secondary)">${score}</td><td><span class="status-pill ${cls}">${label}</span></td>`;
+  deptRows.appendChild(tr);
+});
+
+const ATT_COLORS=['#378ADD','#5DCAA5','#EF9F27','#E24B4A','#7F77DD'];
+const ATT_LABELS=['In office','Remote','Leave','Sick','Reserves'];
+function buildPie(id, vals) {
+  new Chart(document.getElementById(id),{type:'doughnut',data:{labels:ATT_LABELS,datasets:[{data:vals,backgroundColor:ATT_COLORS,borderWidth:0,hoverOffset:4}]},options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.raw}`}}}}});
+}
+function buildLegend(id, vals) {
+  const el=document.getElementById(id);
+  ATT_LABELS.forEach((lbl,i)=>{el.innerHTML+=`<div class="pie-legend-item"><div class="pie-legend-left"><div class="pie-legend-dot" style="background:${ATT_COLORS[i]}"></div><span class="pie-legend-label">${lbl}</span></div><span class="pie-legend-val">${vals[i]}</span></div>`;});
+}
+
+buildPie('mainPie',[118,74,22,19,14]); buildLegend('mainLegend',[118,74,22,19,14]);
+const ceo=[9,5,2,1,3]; document.getElementById('ceoTotal').textContent=`${ceo.reduce((a,b)=>a+b,0)} employees`; buildPie('ceoPie',ceo); buildLegend('ceoLegend',ceo);
+const proc=[10,4,2,2,2]; document.getElementById('procTotal').textContent=`${proc.reduce((a,b)=>a+b,0)} employees`; buildPie('procPie',proc); buildLegend('procLegend',proc);
+const prod=[38,26,8,7,5]; document.getElementById('prodTotal').textContent=`${prod.reduce((a,b)=>a+b,0)} employees`; buildPie('prodPie',prod); buildLegend('prodLegend',prod);
+
+const riskGrid=document.getElementById('riskTeamGrid');
+depts.forEach(d=>{
+  const avail=Math.round((d.office+d.remote)/d.total*100);
+  if(avail>=80) return;
+  const color=avail<70?'#E24B4A':'#EF9F27';
+  riskGrid.innerHTML+=`<div class="risk-team-card" style="border-color:${color}40"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;font-weight:500;color:var(--text-primary)">${d.name}</span><span class="status-pill ${avail<70?'critical':'attention'}">${avail<70?'Critical':'Attention'}</span></div><div style="font-size:22px;font-weight:500;color:${color};margin:4px 0 2px">${avail}%</div><div style="font-size:11px;color:var(--text-secondary)">available (${d.office+d.remote} of ${d.total})</div><div class="avail-bar-wrap"><div class="avail-bar" style="width:${avail}%;background:${color}"></div></div><div style="font-size:10px;color:var(--text-tertiary);margin-top:5px">Sick: ${d.sick} &nbsp; Reserve: ${d.reserve} &nbsp; Leave: ${d.leave}</div></div>`;
+});
+if(!riskGrid.innerHTML) riskGrid.innerHTML='<div style="grid-column:1/-1;font-size:12px;color:var(--text-tertiary);padding:8px 0">All teams above 80% availability threshold.</div>';
+
+[{type:'crit',title:'CEO Office — 3 on reserve simultaneously',sub:'15% of dept unavailable. Coverage gaps flagged.'},{type:'warn',title:'Procurement — spike in sick leave',sub:'5 sick this week vs 2-week avg of 1.5.'},{type:'warn',title:'Production — leave overlap next week',sub:'8 on approved leave during product delivery sprint.'},{type:'info',title:'Operations — coverage stable',sub:'No concurrent leave issues detected.'}].forEach(a=>{
+  const dot=a.type==='crit'?'#E24B4A':a.type==='warn'?'#EF9F27':'#378ADD';
+  document.getElementById('alertsContainer').innerHTML+=`<div class="alert-row alert-${a.type}"><div class="alert-icon" style="background:${dot}"></div><div><div class="alert-title">${a.title}</div><div class="alert-sub">${a.sub}</div></div></div>`;
+});
+
+const weeks=['Wk 12','Wk 13','Wk 14','Wk 15','Wk 16','Wk 17','Wk 18','Wk 19'];
+const leaveData={'Prod.':[8,10,12,9,7,6,5,4],'Ops':[4,4,6,8,5,3,3,2],'Integr.':[4,5,5,4,3,2,2,1],'CEO':[2,2,3,3,2,1,1,1],'Procure.':[2,3,3,2,2,1,1,1]};
+const lhEl=document.getElementById('leaveHeatmap');
+lhEl.innerHTML='<div></div>'+weeks.map(w=>`<div class="lh-header">${w}</div>`).join('');
+Object.entries(leaveData).forEach(([dept,vals])=>{
+  lhEl.innerHTML+=`<div class="lh-dept">${dept}</div>`;
+  vals.forEach(v=>{
+    const bg=v>=10?`rgba(226,75,74,${0.15+v/12*0.5})`:v>=7?`rgba(239,159,39,${0.2+v/12*0.3})`:`rgba(56,138,221,${0.06+v/12*0.15})`;
+    const col=v>=8?'#A32D2D':v>=5?'#854F0B':'var(--text-tertiary)';
+    lhEl.innerHTML+=`<div class="lh-cell" style="background:${bg};color:${col}">${v||''}</div>`;
+  });
+});
+
+const trendViews={
+  weekly:{labels:['Oct W1','Oct W2','Oct W3','Oct W4','Nov W1','Nov W2','Nov W3','Nov W4','Dec W1','Dec W2','Dec W3','Dec W4','Jan W1','Jan W2','Jan W3','Jan W4','Feb W1','Feb W2','Feb W3','Feb W4','Mar W1','Mar W2','Mar W3','Mar W4'],office:[110,112,108,111,109,113,107,110,104,106,102,105,113,116,112,118,116,119,115,120,114,117,115,118],remote:[67,68,66,69,66,68,64,67,62,64,60,63,70,72,69,75,72,74,71,76,73,75,72,74],sick:[9,10,10,11,10,11,11,12,12,12,13,13,13,14,14,15,15,16,16,17,17,18,18,19],reserve:[7,7,8,8,8,8,9,9,9,9,10,10,10,11,11,11,12,12,13,13,13,14,14,14]},
+  monthly:{labels:['Oct','Nov','Dec','Jan','Feb','Mar'],office:[112,108,104,115,118,118],remote:[68,66,62,71,73,74],sick:[10,11,13,14,16,19],reserve:[7,8,9,10,12,14]}
+};
+function makeTDS(d){return[{label:'In office',data:d.office,borderColor:'#378ADD',backgroundColor:'rgba(56,138,221,0.07)',fill:true,tension:0.35,borderWidth:2,pointRadius:2,pointBackgroundColor:'#378ADD'},{label:'Remote',data:d.remote,borderColor:'#5DCAA5',backgroundColor:'rgba(93,202,165,0.06)',fill:true,tension:0.35,borderWidth:2,pointRadius:2,pointBackgroundColor:'#5DCAA5'},{label:'Sick',data:d.sick,borderColor:'#E24B4A',backgroundColor:'rgba(226,75,74,0.05)',fill:true,tension:0.35,borderWidth:2,pointRadius:2,pointBackgroundColor:'#E24B4A'},{label:'Reserve',data:d.reserve,borderColor:'#7F77DD',backgroundColor:'rgba(127,119,221,0.05)',fill:true,tension:0.35,borderWidth:2,pointRadius:2,pointBackgroundColor:'#7F77DD'}];}
+const trendChart=new Chart(document.getElementById('trendChart'),{type:'line',data:{labels:trendViews.weekly.labels,datasets:makeTDS(trendViews.weekly)},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:gc},ticks:{color:tc,font:{size:10},maxRotation:45,autoSkip:true}},y:{grid:{color:gc},ticks:{color:tc,font:{size:11}},beginAtZero:true}},animation:{duration:300}}});
+function setView(v){const d=trendViews[v];trendChart.data.labels=d.labels;trendChart.data.datasets=makeTDS(d);trendChart.options.scales.x.ticks.autoSkip=v==='weekly';trendChart.options.scales.x.ticks.maxRotation=v==='weekly'?45:0;trendChart.update();document.getElementById('btnWeekly').classList.toggle('active',v==='weekly');document.getElementById('btnMonthly').classList.toggle('active',v==='monthly');}
+
+const wPct=Math.round(83/247*100), iPct=Math.round(182/247*100);
+document.getElementById('genderCompany').innerHTML=`<div class="demo-split-row"><span class="demo-split-label">Company</span><div class="demo-split-bar"><div class="demo-split-seg" style="width:${wPct}%;background:#D4537E;color:#fff">${wPct}%</div><div class="demo-split-seg" style="flex:1;background:#378ADD;color:#fff">${100-wPct}%</div></div><span class="demo-split-counts">83F / 164M</span></div><div style="display:flex;gap:24px;margin-top:8px;"><div style="display:flex;align-items:center;gap:8px;font-size:13px;"><div style="width:12px;height:12px;border-radius:50%;background:#D4537E;"></div><span style="color:var(--text-secondary)">Women</span><span style="font-weight:500;font-size:18px;color:var(--text-primary)">83</span></div><div style="display:flex;align-items:center;gap:8px;font-size:13px;"><div style="width:12px;height:12px;border-radius:50%;background:#378ADD;"></div><span style="color:var(--text-secondary)">Men</span><span style="font-weight:500;font-size:18px;color:var(--text-primary)">164</span></div></div>`;
+document.getElementById('locationCompany').innerHTML=`<div class="demo-split-row"><span class="demo-split-label">Company</span><div class="demo-split-bar"><div class="demo-split-seg" style="width:${iPct}%;background:#5DCAA5;color:#fff">${iPct}%</div><div class="demo-split-seg" style="flex:1;background:#7F77DD;color:#fff">${100-iPct}%</div></div><span class="demo-split-counts">182 IL / 65 US</span></div><div style="display:flex;gap:24px;margin-top:8px;"><div style="display:flex;align-items:center;gap:8px;font-size:13px;"><div style="width:12px;height:12px;border-radius:50%;background:#5DCAA5;"></div><span style="color:var(--text-secondary)">Israel</span><span style="font-weight:500;font-size:18px;color:var(--text-primary)">182</span></div><div style="display:flex;align-items:center;gap:8px;font-size:13px;"><div style="width:12px;height:12px;border-radius:50%;background:#7F77DD;"></div><span style="color:var(--text-secondary)">USA</span><span style="font-weight:500;font-size:18px;color:var(--text-primary)">65</span></div></div>`;
+
+new Chart(document.getElementById('reqChart'),{type:'bar',data:{labels:['Production','Operations','Integration','CEO Office','Procurement'],datasets:[{label:'Open REQs',data:[6,3,4,2,3],backgroundColor:'#378ADD',borderRadius:3,barPercentage:0.55},{label:'In progress',data:[4,2,3,1,1],backgroundColor:isDark?'#0C447C':'#B5D4F4',borderRadius:3,barPercentage:0.55}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:gc},ticks:{color:tc,font:{size:10},maxRotation:30}},y:{grid:{color:gc},ticks:{color:tc,font:{size:11}},beginAtZero:true}}}});
+
+[{role:'Senior Engineer',dept:'Production',count:3,stage:'Interview',cls:'pill-amber'},{role:'Compliance Lead',dept:'CEO Office',count:7,stage:'Screening',cls:'pill-blue'},{role:'Ops Coordinator',dept:'Operations',count:2,stage:'Offer',cls:'pill-green'},{role:'Procurement Analyst',dept:'Procurement',count:11,stage:'Screening',cls:'pill-blue'},{role:'Integration Dev',dept:'Integration',count:1,stage:'New',cls:'pill-gray'}].forEach(p=>{
+  document.getElementById('pipelineList').innerHTML+=`<div style="display:flex;align-items:center;justify-content:space-between;font-size:12px;padding:7px 10px;background:var(--bg-secondary);border-radius:var(--radius-md)"><div><div style="font-weight:500;color:var(--text-primary)">${p.role}</div><div style="font-size:11px;color:var(--text-secondary);margin-top:1px">${p.dept} &bull; ${p.count} candidate${p.count>1?'s':''}</div></div><span class="pill ${p.cls}">${p.stage}</span></div>`;
+});
+</script>
+</body>
+</html>
