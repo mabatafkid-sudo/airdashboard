@@ -43,7 +43,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .section-divider-line { flex: 1; height: 0.5px; background: var(--border); }
 .section-divider-label { font-size: 11px; font-weight: 500; color: var(--text-secondary); letter-spacing: 0.07em; text-transform: uppercase; white-space: nowrap; }
 .metrics-grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; margin-bottom: 1.25rem; }
-.metrics-grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; margin-bottom: 1.25rem; }
 .metric-card { background: var(--bg-secondary); border-radius: var(--radius-md); padding: 12px 14px; }
 .metric-label { font-size: 11px; color: var(--text-secondary); margin-bottom: 5px; }
 .metric-value { font-size: 24px; font-weight: 500; color: var(--text-primary); line-height: 1; }
@@ -122,10 +121,24 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   .pill-green { background: #27500A; color: #C0DD97; }
   .pill-gray { background: #444441; color: #D3D1C7; }
 }
+/* Employee events */
+.event-list { display: flex; flex-direction: column; gap: 7px; }
+.event-row { display: flex; align-items: center; gap: 12px; padding: 8px 10px; background: var(--bg-secondary); border-radius: var(--radius-md); }
+.avatar { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; flex-shrink: 0; }
+.event-name { font-size: 12px; font-weight: 500; color: var(--text-primary); }
+.event-sub { font-size: 11px; color: var(--text-secondary); margin-top: 1px; }
+.event-badge { font-size: 10px; padding: 3px 9px; border-radius: 20px; font-weight: 500; white-space: nowrap; }
+.badge-today { background: #FAEEDA; color: #854F0B; }
+.badge-week { background: #E6F1FB; color: #185FA5; }
+.section-sub { font-size: 10px; font-weight: 500; color: var(--text-tertiary); letter-spacing: 0.07em; text-transform: uppercase; margin: 10px 0 6px; }
+@media (prefers-color-scheme: dark) {
+  .badge-today { background: #633806; color: #FAC775; }
+  .badge-week { background: #0C447C; color: #B5D4F4; }
+}
 @media (max-width: 768px) {
   body { padding: 1rem; }
   .attendance-strip { grid-template-columns: repeat(2, 1fr); }
-  .grid-2, .grid-3, .metrics-grid-3, .metrics-grid-4 { grid-template-columns: 1fr; }
+  .grid-2, .grid-3, .metrics-grid-3 { grid-template-columns: 1fr; }
   .leave-heatmap { grid-template-columns: 60px repeat(4,1fr); }
 }
 </style>
@@ -159,6 +172,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     <div class="att-card highlight-crit"><div class="att-label"><span class="att-icon" style="background:#7F77DD;"></span>Reserves</div><span class="att-num">14</span><div class="att-deltas"><span class="delta">vs yesterday: <span class="delta-alert">+3 !</span></span><span class="delta">4w avg: <span class="delta-val neutral">8</span></span></div></div>
   </div>
 
+  <!-- Attendance pie + dept table -->
   <div class="grid-2">
     <div class="card">
       <div class="card-title">Attendance breakdown — 247 employees</div>
@@ -171,6 +185,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     </div>
   </div>
 
+  <!-- 3 dept pies -->
   <div class="grid-3">
     <div class="card">
       <div class="dept-pie-title">CEO Office</div>
@@ -192,6 +207,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     </div>
   </div>
 
+  <!-- Capacity -->
   <div class="section-label">Teams at risk — availability below 80%</div>
   <div class="grid-3" id="riskTeamGrid" style="margin-bottom:1.25rem;"></div>
 
@@ -207,6 +223,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     </div>
   </div>
 
+  <!-- Trend chart -->
   <div class="card" style="margin-top:1.25rem;margin-bottom:1.25rem;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.85rem;">
       <span class="card-title">Attendance trend</span>
@@ -224,14 +241,63 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     <div style="position:relative;width:100%;height:200px;"><canvas id="trendChart"></canvas></div>
   </div>
 
+  <!-- Demographics + Employee Events side by side -->
   <div class="grid-2">
-    <div class="card">
-      <div class="card-title">Gender — company wide</div>
-      <div id="genderCompany"></div>
+    <div class="grid-2" style="margin-bottom:0;">
+      <div class="card">
+        <div class="card-title">Gender — company wide</div>
+        <div id="genderCompany"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Location — company wide</div>
+        <div id="locationCompany"></div>
+      </div>
     </div>
     <div class="card">
-      <div class="card-title">Location — company wide</div>
-      <div id="locationCompany"></div>
+      <div class="card-title">Employee events this week</div>
+      <div class="section-sub">Birthdays</div>
+      <div class="event-list">
+        <div class="event-row">
+          <div class="avatar" style="background:#E6F1FB;color:#185FA5;">DK</div>
+          <div style="flex:1;">
+            <div class="event-name">Dana Klein</div>
+            <div class="event-sub">Production &bull; Today, March 19</div>
+          </div>
+          <span class="event-badge badge-today">Today</span>
+        </div>
+        <div class="event-row">
+          <div class="avatar" style="background:#EAF3DE;color:#3B6D11;">RL</div>
+          <div style="flex:1;">
+            <div class="event-name">Ron Levy</div>
+            <div class="event-sub">Operations &bull; Tomorrow, March 20</div>
+          </div>
+          <span class="event-badge badge-week">Tomorrow</span>
+        </div>
+        <div class="event-row">
+          <div class="avatar" style="background:#FBEAF0;color:#993556;">SM</div>
+          <div style="flex:1;">
+            <div class="event-name">Sara Mizrahi</div>
+            <div class="event-sub">Integration &bull; March 22</div>
+          </div>
+          <span class="event-badge badge-week">This week</span>
+        </div>
+        <div class="event-row">
+          <div class="avatar" style="background:#FAEEDA;color:#854F0B;">AB</div>
+          <div style="flex:1;">
+            <div class="event-name">Avi Ben-David</div>
+            <div class="event-sub">CEO Office &bull; March 23</div>
+          </div>
+          <span class="event-badge badge-week">This week</span>
+        </div>
+        <div class="event-row">
+          <div class="avatar" style="background:#EEEDFE;color:#534AB7;">YC</div>
+          <div style="flex:1;">
+            <div class="event-name">Yael Cohen</div>
+            <div class="event-sub">Procurement &bull; March 24</div>
+          </div>
+          <span class="event-badge badge-week">This week</span>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -353,8 +419,8 @@ const trendChart=new Chart(document.getElementById('trendChart'),{type:'line',da
 function setView(v){const d=trendViews[v];trendChart.data.labels=d.labels;trendChart.data.datasets=makeTDS(d);trendChart.options.scales.x.ticks.autoSkip=v==='weekly';trendChart.options.scales.x.ticks.maxRotation=v==='weekly'?45:0;trendChart.update();document.getElementById('btnWeekly').classList.toggle('active',v==='weekly');document.getElementById('btnMonthly').classList.toggle('active',v==='monthly');}
 
 const wPct=Math.round(83/247*100), iPct=Math.round(182/247*100);
-document.getElementById('genderCompany').innerHTML=`<div class="demo-split-row"><span class="demo-split-label">Company</span><div class="demo-split-bar"><div class="demo-split-seg" style="width:${wPct}%;background:#D4537E;color:#fff">${wPct}%</div><div class="demo-split-seg" style="flex:1;background:#378ADD;color:#fff">${100-wPct}%</div></div><span class="demo-split-counts">83F / 164M</span></div><div style="display:flex;gap:24px;margin-top:8px;"><div style="display:flex;align-items:center;gap:8px;font-size:13px;"><div style="width:12px;height:12px;border-radius:50%;background:#D4537E;"></div><span style="color:var(--text-secondary)">Women</span><span style="font-weight:500;font-size:18px;color:var(--text-primary)">83</span></div><div style="display:flex;align-items:center;gap:8px;font-size:13px;"><div style="width:12px;height:12px;border-radius:50%;background:#378ADD;"></div><span style="color:var(--text-secondary)">Men</span><span style="font-weight:500;font-size:18px;color:var(--text-primary)">164</span></div></div>`;
-document.getElementById('locationCompany').innerHTML=`<div class="demo-split-row"><span class="demo-split-label">Company</span><div class="demo-split-bar"><div class="demo-split-seg" style="width:${iPct}%;background:#5DCAA5;color:#fff">${iPct}%</div><div class="demo-split-seg" style="flex:1;background:#7F77DD;color:#fff">${100-iPct}%</div></div><span class="demo-split-counts">182 IL / 65 US</span></div><div style="display:flex;gap:24px;margin-top:8px;"><div style="display:flex;align-items:center;gap:8px;font-size:13px;"><div style="width:12px;height:12px;border-radius:50%;background:#5DCAA5;"></div><span style="color:var(--text-secondary)">Israel</span><span style="font-weight:500;font-size:18px;color:var(--text-primary)">182</span></div><div style="display:flex;align-items:center;gap:8px;font-size:13px;"><div style="width:12px;height:12px;border-radius:50%;background:#7F77DD;"></div><span style="color:var(--text-secondary)">USA</span><span style="font-weight:500;font-size:18px;color:var(--text-primary)">65</span></div></div>`;
+document.getElementById('genderCompany').innerHTML=`<div class="demo-split-row"><span class="demo-split-label">Company</span><div class="demo-split-bar"><div class="demo-split-seg" style="width:${wPct}%;background:#D4537E;color:#fff">${wPct}%</div><div class="demo-split-seg" style="flex:1;background:#378ADD;color:#fff">${100-wPct}%</div></div><span class="demo-split-counts">83F / 164M</span></div><div style="display:flex;gap:24px;margin-top:8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:12px;height:12px;border-radius:50%;background:#D4537E;"></div><span style="color:var(--text-secondary);font-size:13px;">Women</span><span style="font-weight:500;font-size:18px;color:var(--text-primary)">83</span></div><div style="display:flex;align-items:center;gap:8px;"><div style="width:12px;height:12px;border-radius:50%;background:#378ADD;"></div><span style="color:var(--text-secondary);font-size:13px;">Men</span><span style="font-weight:500;font-size:18px;color:var(--text-primary)">164</span></div></div>`;
+document.getElementById('locationCompany').innerHTML=`<div class="demo-split-row"><span class="demo-split-label">Company</span><div class="demo-split-bar"><div class="demo-split-seg" style="width:${iPct}%;background:#5DCAA5;color:#fff">${iPct}%</div><div class="demo-split-seg" style="flex:1;background:#7F77DD;color:#fff">${100-iPct}%</div></div><span class="demo-split-counts">182 IL / 65 US</span></div><div style="display:flex;gap:24px;margin-top:8px;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:12px;height:12px;border-radius:50%;background:#5DCAA5;"></div><span style="color:var(--text-secondary);font-size:13px;">Israel</span><span style="font-weight:500;font-size:18px;color:var(--text-primary)">182</span></div><div style="display:flex;align-items:center;gap:8px;"><div style="width:12px;height:12px;border-radius:50%;background:#7F77DD;"></div><span style="color:var(--text-secondary);font-size:13px;">USA</span><span style="font-weight:500;font-size:18px;color:var(--text-primary)">65</span></div></div>`;
 
 new Chart(document.getElementById('reqChart'),{type:'bar',data:{labels:['Production','Operations','Integration','CEO Office','Procurement'],datasets:[{label:'Open REQs',data:[6,3,4,2,3],backgroundColor:'#378ADD',borderRadius:3,barPercentage:0.55},{label:'In progress',data:[4,2,3,1,1],backgroundColor:isDark?'#0C447C':'#B5D4F4',borderRadius:3,barPercentage:0.55}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:gc},ticks:{color:tc,font:{size:10},maxRotation:30}},y:{grid:{color:gc},ticks:{color:tc,font:{size:11}},beginAtZero:true}}}});
 
